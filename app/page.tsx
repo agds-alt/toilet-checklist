@@ -1,103 +1,110 @@
-import Image from "next/image";
+﻿// ============================================
+// app/page.tsx - UPDATE MAIN PAGE WITH PROTECTED LAYOUT
+// ============================================
+'use client';
+
+import { useState, useEffect } from 'react';
+import ProtectedLayout from '@/components/layout/ProtectedLayout';
+import Header from '@/components/Header';
+import Controls from '@/components/Controls';
+import ChecklistTable from '@/components/ChecklistTable';
+import PhotoModal from '@/components/PhotoModal';
+import Sidebar from '@/components/Sidebar';
+import { getChecklistData } from '@/lib/database/checklist';
+import { getAverageScore } from '@/lib/utils';
+import { useAuth } from '@/lib/auth/auth-context';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    const { profile } = useAuth();
+    const [checklistData, setChecklistData] = useState<any>({});
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear] = useState(new Date().getFullYear());
+    const [photoModalData, setPhotoModalData] = useState<any>(null);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    useEffect(() => {
+        loadData();
+    }, [selectedMonth, selectedYear]);
+
+    const loadData = async () => {
+        try {
+            const data = await getChecklistData(selectedMonth, selectedYear);
+            const formatted = data.reduce((acc: any, item: any) => {
+                const key = `${item.location}-${item.month}-${item.day}`;
+                acc[key] = {
+                    score: item.score,
+                    photo: item.photo_url,
+                    timestamp: item.created_at
+                };
+                return acc;
+            }, {});
+            setChecklistData(formatted);
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCellClick = (location: string, day: number) => {
+        const key = `${location}-${selectedMonth}-${day}`;
+        const data = checklistData[key];
+
+        if (data?.photo) {
+            setPhotoModalData(data);
+        } else if (profile?.role === 'cleaner' || profile?.role === 'admin') {
+            setSidebarOpen(true);
+        }
+    };
+
+    const handleUpload = async () => {
+        await loadData();
+    };
+
+    const averageScore = getAverageScore(checklistData);
+
+    return (
+        <ProtectedLayout>
+            <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+                <Header averageScore={averageScore} onUploadClick={() => setSidebarOpen(true)} />
+                <Controls
+                    selectedMonth={selectedMonth}
+                    selectedYear={selectedYear}
+                    onMonthChange={setSelectedMonth}
+                />
+
+                <div className="max-w-7xl mx-auto px-6 py-8">
+                    {loading ? (
+                        <div className="text-center py-20">
+                            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="mt-4 text-slate-600">Loading data...</p>
+                        </div>
+                    ) : (
+                        <ChecklistTable
+                            data={checklistData}
+                            selectedMonth={selectedMonth}
+                            onCellClick={handleCellClick}
+                        />
+                    )}
+                </div>
+
+                {(profile?.role === 'cleaner' || profile?.role === 'admin') && (
+                    <Sidebar
+                        isOpen={sidebarOpen}
+                        onClose={() => setSidebarOpen(false)}
+                        onUpload={handleUpload}
+                        selectedMonth={selectedMonth}
+                    />
+                )}
+
+                {photoModalData && (
+                    <PhotoModal
+                        data={photoModalData}
+                        onClose={() => setPhotoModalData(null)}
+                    />
+                )}
+            </main>
+        </ProtectedLayout>
+    );
 }
