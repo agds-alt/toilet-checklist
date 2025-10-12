@@ -1,5 +1,5 @@
 ﻿// ============================================
-// components/layout/Sidebar.tsx - WITH EVENT DISPATCH (NO GAP)
+// components/layout/Sidebar.tsx - FIXED: LEFT ALIGNMENT & ALWAYS-VISIBLE BADGES
 // ============================================
 'use client';
 
@@ -169,7 +169,7 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                 }`}
         >
             <div className="flex flex-col h-full">
-                {/* Logo Section */}
+                {/* Logo Section - FIX: LEFT ALIGNED when expanded */}
                 <div className="p-6 border-b relative">
                     <div className={`flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center' : 'gap-3'
                         }`}>
@@ -182,11 +182,11 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                             />
                         </div>
 
-                        {/* Logo Text - Hidden when collapsed */}
+                        {/* Logo Text - Hidden when collapsed, LEFT ALIGNED when expanded */}
                         <div className={`transition-all duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
                             }`}>
-                            <h2 className="font-bold text-slate-800 whitespace-nowrap">Prenacons</h2>
-                            <p className="text-xs text-slate-500 whitespace-nowrap">Toilet Checklist</p>
+                            <h2 className="font-bold text-slate-800 whitespace-nowrap text-left">Prenacons</h2>
+                            <p className="text-xs text-slate-500 whitespace-nowrap text-left">Toilet Checklist</p>
                         </div>
                     </div>
 
@@ -204,7 +204,7 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                     </button>
                 </div>
 
-                {/* User Info */}
+                {/* User Info - FIX: LEFT ALIGNED when expanded */}
                 <div className="p-4 border-b">
                     <div className={`flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center' : 'gap-3'
                         }`}>
@@ -216,10 +216,10 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                         </div>
                         <div className={`flex-1 min-w-0 transition-all duration-300 overflow-hidden ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
                             }`}>
-                            <p className="font-semibold text-sm text-slate-800 truncate whitespace-nowrap">
+                            <p className="font-semibold text-sm text-slate-800 truncate whitespace-nowrap text-left">
                                 {profile?.full_name || 'User'}
                             </p>
-                            <p className="text-xs text-slate-500 capitalize whitespace-nowrap">
+                            <p className="text-xs text-slate-500 capitalize whitespace-nowrap text-left">
                                 {profile?.role}
                             </p>
                         </div>
@@ -249,13 +249,13 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                                         <Icon className={`w-5 h-5 flex-shrink-0 ${item.highlight ? 'animate-bounce-subtle' : ''
                                             }`} />
 
-                                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'flex-1 opacity-100'
+                                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'flex-1 opacity-100 text-left'
                                             }`}>
                                             {item.title}
                                         </span>
 
-                                        {/* Badge */}
-                                        {item.badge !== null && item.badge > 0 && (
+                                        {/* Badge - FIX: Show badge even when count is 0, hide only for null */}
+                                        {item.badge !== null && (
                                             <span className={`${item.badgeColor || 'bg-red-500'
                                                 } text-white text-xs font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${isCollapsed ? 'absolute -top-1 -right-1 scale-75' : ''
                                                 }`}>
@@ -269,7 +269,7 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                     </ul>
                 </nav>
 
-                {/* Logout Button */}
+                {/* Logout Button - FIX: LEFT ALIGNED when expanded */}
                 <div className="p-4 border-t">
                     <button
                         onClick={() => signOut()}
@@ -278,7 +278,7 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                         title={isCollapsed ? 'Logout' : undefined}
                     >
                         <LogOut className="w-5 h-5 flex-shrink-0" />
-                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100'
+                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100 text-left'
                             }`}>
                             Logout
                         </span>
