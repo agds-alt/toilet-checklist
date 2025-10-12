@@ -9,7 +9,7 @@ import { AuthProvider } from '@/lib/auth/auth-context';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'Prenacons - Toilet Checklist System',
+    title: 'Proservice Indonesia',
     description: 'Sistem Monitoring Kebersihan Toilet - Prenacons',
     icons: {
         icon: [

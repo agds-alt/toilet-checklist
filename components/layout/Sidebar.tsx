@@ -1,5 +1,5 @@
 ﻿// ============================================
-// components/layout/Sidebar.tsx - WITH STATE SYNC (NO GAP)
+// components/layout/Sidebar.tsx - WITH EVENT DISPATCH (NO GAP)
 // ============================================
 'use client';
 
@@ -38,91 +38,71 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
         todayRecords: 0
     });
 
-    // Load collapse state from localStorage
+    // Load collapse state from localStorage on mount
     useEffect(() => {
         const saved = localStorage.getItem('sidebarCollapsed');
         if (saved) {
-            const collapsed = JSON.parse(saved);
-            setIsCollapsed(collapsed);
-            updateBodyMargin(collapsed);
+            setIsCollapsed(JSON.parse(saved));
         }
     }, []);
 
-    // Update body margin when sidebar state changes
-    const updateBodyMargin = (collapsed: boolean) => {
-        document.documentElement.style.setProperty(
-            '--sidebar-width',
-            collapsed ? '80px' : '256px'
+    // Toggle collapse with event dispatch
+    const toggleCollapse = () => {
+        const newState = !isCollapsed;
+        setIsCollapsed(newState);
+        localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
+
+        // Dispatch custom event for same-window updates
+        window.dispatchEvent(
+            new CustomEvent('sidebarToggle', { detail: newState })
         );
     };
 
     // Fetch badge counts
     useEffect(() => {
-        const fetchCounts = async () => {
+        const fetchBadges = async () => {
             try {
                 // Count users
-                const { count: usersCount } = await supabase
+                const { count: userCount } = await supabase
                     .from('profiles')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('is_active', true);
+                    .select('*', { count: 'exact', head: true });
 
-                // Count photos (this month)
-                const currentMonth = new Date().getMonth();
-                const currentYear = new Date().getFullYear();
-
-                const { count: photosCount } = await supabase
-                    .from('checklist_data')
+                // Count photos
+                const { count: photoCount } = await supabase
+                    .from('toilet_records')
                     .select('*', { count: 'exact', head: true })
-                    .eq('month', currentMonth)
-                    .eq('year', currentYear)
                     .not('photo_url', 'is', null);
 
-                // Count all records (this month)
-                const { count: recordsCount } = await supabase
-                    .from('checklist_data')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('month', currentMonth)
-                    .eq('year', currentYear);
+                // Count total records
+                const { count: recordCount } = await supabase
+                    .from('toilet_records')
+                    .select('*', { count: 'exact', head: true });
 
                 // Count today's records
-                const today = new Date().getDate();
+                const today = new Date().toISOString().split('T')[0];
                 const { count: todayCount } = await supabase
-                    .from('checklist_data')
+                    .from('toilet_records')
                     .select('*', { count: 'exact', head: true })
-                    .eq('day', today)
-                    .eq('month', currentMonth)
-                    .eq('year', currentYear);
+                    .gte('created_at', today);
 
                 setBadges({
-                    users: usersCount || 0,
-                    photos: photosCount || 0,
-                    records: recordsCount || 0,
+                    users: userCount || 0,
+                    photos: photoCount || 0,
+                    records: recordCount || 0,
                     todayRecords: todayCount || 0
                 });
             } catch (error) {
-                console.error('Error fetching badge counts:', error);
+                console.error('Error fetching badges:', error);
             }
         };
 
-        fetchCounts();
-
-        // Refresh counts every 30 seconds
-        const interval = setInterval(fetchCounts, 30000);
+        fetchBadges();
+        // Refresh badges every 30 seconds
+        const interval = setInterval(fetchBadges, 30000);
         return () => clearInterval(interval);
     }, []);
 
-    const toggleCollapse = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
-        updateBodyMargin(newState);
-    };
-
-    const handleSignOut = async () => {
-        await signOut();
-        router.push('/login');
-    };
-
+    // Menu items with badges
     const menuItems = [
         {
             title: 'Dashboard',
@@ -185,21 +165,20 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
 
     return (
         <aside
-            className={`fixed left-0 top-0 h-screen glass-card border-r shadow-xl z-30 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+            className={`fixed left-0 top-0 h-screen glass-card border-r shadow-xl z-30 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-64'
                 }`}
         >
             <div className="flex flex-col h-full">
-                {/* Logo */}
+                {/* Logo Section */}
                 <div className="p-6 border-b relative">
                     <div className={`flex items-center transition-all duration-300 ${isCollapsed ? 'justify-center' : 'gap-3'
                         }`}>
-                        {/* Logo Image - Always centered when collapsed */}
+                        {/* Logo Image */}
                         <div className="flex-shrink-0">
                             <img
                                 src="/logo-prenacons.png"
                                 alt="Prenacons Logo"
-                                className={`transition-all duration-300 ${isCollapsed ? 'w-10 h-10' : 'w-10 h-10'
-                                    }`}
+                                className="w-10 h-10 transition-all duration-300"
                             />
                         </div>
 
@@ -214,7 +193,8 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                     {/* Toggle Button */}
                     <button
                         onClick={toggleCollapse}
-                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
+                        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 z-50"
+                        aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                     >
                         {isCollapsed ? (
                             <ChevronRight className="w-4 h-4" />
@@ -239,7 +219,9 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                             <p className="font-semibold text-sm text-slate-800 truncate whitespace-nowrap">
                                 {profile?.full_name || 'User'}
                             </p>
-                            <p className="text-xs text-slate-500 capitalize whitespace-nowrap">{profile?.role}</p>
+                            <p className="text-xs text-slate-500 capitalize whitespace-nowrap">
+                                {profile?.role}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -261,39 +243,23 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                                                 : isActive
                                                     ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
                                                     : 'hover:bg-slate-100 text-slate-700'
-                                            } ${isCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'} rounded-xl`}
+                                            } ${isCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'
+                                            } rounded-xl`}
                                     >
                                         <Icon className={`w-5 h-5 flex-shrink-0 ${item.highlight ? 'animate-bounce-subtle' : ''
                                             }`} />
 
-                                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'flex-1 opacity-100'
                                             }`}>
                                             {item.title}
                                         </span>
 
-                                        {/* Badge - Show when expanded OR when collapsed (absolute positioned) */}
-                                        {item.badge !== null && item.badge !== undefined && item.badge > 0 && (
-                                            <>
-                                                {/* Badge when expanded */}
-                                                {!isCollapsed && (
-                                                    <span className={`ml-auto px-2 py-0.5 ${item.badgeColor || 'bg-red-500'} text-white text-xs font-bold rounded-full min-w-[24px] text-center`}>
-                                                        {item.badge > 99 ? '99+' : item.badge}
-                                                    </span>
-                                                )}
-
-                                                {/* Badge when collapsed - absolute positioned */}
-                                                {isCollapsed && (
-                                                    <span className={`absolute -top-1 -right-1 w-5 h-5 ${item.badgeColor || 'bg-red-500'} text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-lg`}>
-                                                        {item.badge > 9 ? '9+' : item.badge}
-                                                    </span>
-                                                )}
-                                            </>
-                                        )}
-
-                                        {/* "New" badge for upload button */}
-                                        {item.highlight && !isCollapsed && (
-                                            <span className="ml-auto text-xs bg-white/20 px-2 py-0.5 rounded-full">
-                                                New
+                                        {/* Badge */}
+                                        {item.badge !== null && item.badge > 0 && (
+                                            <span className={`${item.badgeColor || 'bg-red-500'
+                                                } text-white text-xs font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${isCollapsed ? 'absolute -top-1 -right-1 scale-75' : ''
+                                                }`}>
+                                                {item.badge}
                                             </span>
                                         )}
                                     </button>
@@ -303,16 +269,16 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
                     </ul>
                 </nav>
 
-                {/* Logout */}
+                {/* Logout Button */}
                 <div className="p-4 border-t">
                     <button
-                        onClick={handleSignOut}
+                        onClick={() => signOut()}
+                        className={`w-full flex items-center transition-all text-red-600 hover:bg-red-50 ${isCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'
+                            } rounded-xl`}
                         title={isCollapsed ? 'Logout' : undefined}
-                        className={`w-full flex items-center hover:bg-red-50 text-red-600 transition-all rounded-xl ${isCollapsed ? 'justify-center px-3 py-3' : 'gap-3 px-4 py-3'
-                            }`}
                     >
                         <LogOut className="w-5 h-5 flex-shrink-0" />
-                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'
+                        <span className={`font-medium transition-all duration-300 overflow-hidden whitespace-nowrap ${isCollapsed ? 'w-0 opacity-0' : 'opacity-100'
                             }`}>
                             Logout
                         </span>

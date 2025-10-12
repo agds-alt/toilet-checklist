@@ -1,9 +1,9 @@
 // ============================================
-// components/layout/DashboardWrapper.tsx - CLIENT COMPONENT
+// components/layout/DashboardWrapper.tsx - FIXED (NO GAP)
 // ============================================
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import NavigationSidebar from '@/components/layout/Sidebar';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/lib/auth/auth-context';
@@ -15,16 +15,55 @@ export default function DashboardWrapper({
 }) {
     const { profile } = useAuth();
     const [uploadSidebarOpen, setUploadSidebarOpen] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Only show upload sidebar for admin and cleaner
     const canUpload = profile?.role === 'admin' || profile?.role === 'cleaner';
+
+    // Listen to sidebar collapse state from localStorage
+    useEffect(() => {
+        // Initial check
+        const checkCollapsed = () => {
+            const saved = localStorage.getItem('sidebarCollapsed');
+            if (saved) {
+                setIsSidebarCollapsed(JSON.parse(saved));
+            }
+        };
+
+        checkCollapsed();
+
+        // Listen for storage changes (sidebar updates)
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === 'sidebarCollapsed' && e.newValue) {
+                setIsSidebarCollapsed(JSON.parse(e.newValue));
+            }
+        };
+
+        // Custom event for same-window updates
+        const handleCustom = (e: CustomEvent) => {
+            setIsSidebarCollapsed(e.detail);
+        };
+
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('sidebarToggle' as any, handleCustom);
+
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('sidebarToggle' as any, handleCustom);
+        };
+    }, []);
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
             <NavigationSidebar
                 onUploadClick={canUpload ? () => setUploadSidebarOpen(true) : undefined}
             />
-            <main className="flex-1 ml-64">
+
+            {/* Main content with dynamic margin and smooth transition */}
+            <main
+                className={`flex-1 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'
+                    }`}
+            >
                 {children}
             </main>
 
