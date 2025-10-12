@@ -1,4 +1,6 @@
-﻿// lib/auth/auth-context.tsx
+﻿// ============================================
+// lib/auth/auth-context.tsx - FIXED STRUCTURE
+// ============================================
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -10,6 +12,7 @@ export interface Profile {
     email: string;
     full_name: string | null;
     role: 'admin' | 'supervisor' | 'cleaner';
+    is_active: boolean;
     created_at: string;
     updated_at: string;
 }
@@ -69,9 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (error) {
                 console.error('❌ Profile fetch error:', error);
-                // If profile doesn't exist, try to create it
                 if (error.code === 'PGRST116') {
-                    console.log('⚠️ Profile not found, may need to be created by trigger');
+                    console.log('⚠️ Profile not found');
                 }
                 throw error;
             }
@@ -91,17 +93,77 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signUp = async (email: string, password: string, fullName: string, role: string) => {
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: fullName,
-                    role: role
+        try {
+            console.log('🔐 Starting signup process...');
+
+            // Step 1: Sign up the user
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
+                        role: role
+                    },
+                    emailRedirectTo: `${window.location.origin}/dashboard`
                 }
+            });
+
+            if (authError) {
+                console.error('❌ Auth signup error:', authError);
+                throw authError;
             }
-        });
-        if (error) throw error;
+
+            if (!authData.user) {
+                throw new Error('Signup failed - no user returned');
+            }
+
+            console.log('✅ Auth user created:', authData.user.id);
+
+            // Step 2: Wait a bit for the trigger to execute
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Step 3: Check if profile was created by trigger
+            const { data: existingProfile, error: checkError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', authData.user.id)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                console.error('❌ Error checking profile:', checkError);
+            }
+
+            // Step 4: If profile doesn't exist, create it manually
+            if (!existingProfile) {
+                console.log('⚠️ Profile not created by trigger, creating manually...');
+
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({
+                        id: authData.user.id,
+                        email: email,
+                        full_name: fullName,
+                        role: role,
+                        is_active: true,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    });
+
+                if (profileError && profileError.code !== '23505') {
+                    console.error('❌ Profile creation error:', profileError);
+                    throw new Error(`Failed to create profile: ${profileError.message}`);
+                }
+
+                console.log('✅ Profile created manually');
+            } else {
+                console.log('✅ Profile already exists from trigger');
+            }
+
+        } catch (error: any) {
+            console.error('❌ Signup process error:', error);
+            throw error;
+        }
     };
 
     const signOut = async () => {

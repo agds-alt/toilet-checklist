@@ -1,5 +1,5 @@
 ﻿// ============================================
-// app/layout.tsx - UPDATE ROOT LAYOUT
+// app/layout.tsx - WITH PRENACONS FAVICON
 // ============================================
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
@@ -9,8 +9,24 @@ import { AuthProvider } from '@/lib/auth/auth-context';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'Toilet Checklist System - Proservice Indonesia',
-    description: 'Sistem Checklist Kebersihan Toilet dengan Multi-Role',
+    title: 'Prenacons - Toilet Checklist System',
+    description: 'Sistem Monitoring Kebersihan Toilet - Prenacons',
+    icons: {
+        icon: [
+            {
+                url: '/logo-prenacons.png',
+                sizes: '32x32',
+                type: 'image/png',
+            },
+            {
+                url: '/logo-prenacons.png',
+                sizes: '16x16',
+                type: 'image/png',
+            },
+        ],
+        apple: '/logo-prenacons.png',
+        shortcut: '/logo-prenacons.png',
+    },
 };
 
 export default function RootLayout({

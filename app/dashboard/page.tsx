@@ -1,53 +1,56 @@
-﻿'use client';
+﻿// ============================================
+// app/dashboard/page.tsx - FIXED LAYOUT & SPACING
+// ============================================
+'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import Header from '@/components/Header';
-import Controls from '@/components/Controls';
-import ChecklistTable from '@/components/ChecklistTable';
-import PhotoModal from '@/components/PhotoModal';
-import Sidebar from '@/components/Sidebar';
-import { getChecklistData, ChecklistData } from '@/lib/database/checklist'; // ← UPDATE: Import ChecklistData type
-import { getAverageScore, periods } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/auth/auth-context';
+import ChecklistTable from '@/components/ChecklistTable';
+import Controls from '@/components/Controls';
+import Sidebar from '@/components/Sidebar';
+import PhotoModal from '@/components/PhotoModal';
+import Header from '@/components/Header';
+import { getChecklistData, saveChecklistData } from '@/lib/database/checklist';
 import { supabase } from '@/lib/supabase/client';
-
-interface ChecklistItem {
-    id: string;
-    location: string;
-    day: number;
-    month: number;
-    year: number;
-    score: number;
-    photo_url: string | null;
-    uploaded_by: string | null;
-    created_at: string;
-}
-
-interface Uploader {
-    id: string;
-    name: string;
-}
 
 export default function DashboardPage() {
     const { profile } = useAuth();
-    const [allChecklistData, setAllChecklistData] = useState<ChecklistItem[]>([]);
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
     const [selectedYear] = useState(new Date().getFullYear());
     const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
-    const [selectedUploader, setSelectedUploader] = useState('all');
-    const [uploaders, setUploaders] = useState<Uploader[]>([]);
-    const [photoModalData, setPhotoModalData] = useState<any>(null);
+    const [selectedUploader, setSelectedUploader] = useState<string>('all');
+    const [uploaders, setUploaders] = useState<Array<{ id: string; name: string }>>([]);
+    const [allChecklistData, setAllChecklistData] = useState<any[]>([]);
+    const [filteredData, setFilteredData] = useState<any>({});
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [photoModalData, setPhotoModalData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+    // Fetch uploaders for filter
     useEffect(() => {
-        loadData();
-        loadUploaders();
-    }, [selectedMonth, selectedYear]);
+        const fetchUploaders = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('id, full_name')
+                    .eq('is_active', true)
+                    .order('full_name');
 
-    const loadData = async () => {
+                if (error) throw error;
+
+                setUploaders(data?.map(u => ({ id: u.id, name: u.full_name || u.id })) || []);
+            } catch (error) {
+                console.error('Error fetching uploaders:', error);
+            }
+        };
+
+        fetchUploaders();
+    }, []);
+
+    // Load checklist data
+    const loadData = useCallback(async () => {
+        setLoading(true);
         try {
-            setLoading(true);
             const data = await getChecklistData(selectedMonth, selectedYear);
             setAllChecklistData(data);
         } catch (error) {
@@ -55,65 +58,52 @@ export default function DashboardPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedMonth, selectedYear]);
 
-    const loadUploaders = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('id, full_name')
-                .order('full_name');
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
 
-            if (error) throw error;
+    // Filter data
+    useEffect(() => {
+        const filtered: any = {};
 
-            const uploaderList: Uploader[] = data.map(profile => ({
-                id: profile.id,
-                name: profile.full_name || 'Unknown User'
-            }));
+        allChecklistData.forEach((item: any) => {
+            if (selectedUploader !== 'all' && item.uploaded_by !== selectedUploader) {
+                return;
+            }
 
-            setUploaders(uploaderList);
-        } catch (error) {
-            console.error('Error loading uploaders:', error);
-        }
-    };
-
-    const filteredData = useMemo(() => {
-        let filtered = [...allChecklistData];
-
-        if (selectedWeek !== null && periods[selectedWeek]) {
-            const weekDays = periods[selectedWeek].days;
-            filtered = filtered.filter(item => weekDays.includes(item.day));
-        }
-
-        if (selectedUploader !== 'all') {
-            filtered = filtered.filter(item => item.uploaded_by === selectedUploader);
-        }
-
-        return filtered.reduce((acc: any, item: ChecklistItem) => {
             const key = `${item.location}-${item.month}-${item.day}`;
-            acc[key] = {
+            filtered[key] = {
                 score: item.score,
                 photo: item.photo_url,
-                timestamp: item.created_at,
-                uploadedBy: item.uploaded_by
+                photoData: item
             };
-            return acc;
-        }, {});
-    }, [allChecklistData, selectedWeek, selectedUploader]);
+        });
+
+        setFilteredData(filtered);
+    }, [allChecklistData, selectedUploader]);
+
+    const handleUpload = async (uploadData: any) => {
+        try {
+            await saveChecklistData(uploadData);
+            await loadData();
+            setSidebarOpen(false);
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('❌ Gagal upload data');
+        }
+    };
 
     const handleCellClick = (location: string, day: number) => {
         const key = `${location}-${selectedMonth}-${day}`;
         const data = filteredData[key];
 
-        if (data?.photo) {
-            setPhotoModalData(data);
+        if (data?.photoData) {
+            setPhotoModalData(data.photoData);
         } else if (profile?.role === 'cleaner' || profile?.role === 'admin') {
             setSidebarOpen(true);
         }
-    };
-
-    const handleUpload = async () => {
-        await loadData();
     };
 
     const handleResetFilters = () => {
@@ -121,27 +111,26 @@ export default function DashboardPage() {
         setSelectedUploader('all');
     };
 
-    const averageScore = getAverageScore(filteredData);
-
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
                     <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-slate-600">Loading checklist...</p>
+                    <p className="text-slate-600">Loading dashboard...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
             <Header
-                averageScore={averageScore}
-                onUploadClick={() => setSidebarOpen(true)}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                data={filteredData}
+                onOpenUpload={() => setSidebarOpen(true)}
             />
 
-            {/* ← UPDATE: Pass rawData to Controls for export */}
             <Controls
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
@@ -152,20 +141,19 @@ export default function DashboardPage() {
                 onWeekChange={setSelectedWeek}
                 onUploaderChange={setSelectedUploader}
                 onReset={handleResetFilters}
-                rawData={allChecklistData} // ← ADD: Pass raw data for export
+                rawData={allChecklistData}
             />
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            {/* IMPROVED: Better max-width and padding */}
+            <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-6">
                 {(selectedWeek !== null || selectedUploader !== 'all') && (
-                    <div className="mb-6 glass-card rounded-2xl p-4 border-l-4 border-blue-500">
+                    <div className="mb-4 glass-card rounded-xl p-3 border-l-4 border-blue-500">
                         <div className="flex items-center gap-2 text-sm">
-                            <span className="font-bold text-slate-700">
-                                Menampilkan:
-                            </span>
+                            <span className="font-bold text-slate-700">Filter Aktif:</span>
                             <span className="text-slate-600">
-                                {allChecklistData.length} total records
-                                {selectedWeek !== null && ` - ${periods[selectedWeek].name}`}
-                                {selectedUploader !== 'all' && ` - ${uploaders.find(u => u.id === selectedUploader)?.name}`}
+                                {allChecklistData.length} records
+                                {selectedWeek !== null && ` • Minggu ke-${selectedWeek + 1}`}
+                                {selectedUploader !== 'all' && ` • ${uploaders.find(u => u.id === selectedUploader)?.name}`}
                             </span>
                         </div>
                     </div>

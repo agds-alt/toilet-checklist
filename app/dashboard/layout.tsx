@@ -1,4 +1,7 @@
-import NavigationSidebar from '@/components/layout/Sidebar';
+// ============================================
+// app/dashboard/layout.tsx - FIXED (Server Component)
+// ============================================
+import DashboardWrapper from '@/components/layout/DashboardWrapper';
 import ProtectedLayout from '@/components/layout/ProtectedLayout';
 
 export default function DashboardLayout({
@@ -8,12 +11,9 @@ export default function DashboardLayout({
 }) {
     return (
         <ProtectedLayout>
-            <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-                <NavigationSidebar />
-                <main className="flex-1 ml-64">
-                    {children}
-                </main>
-            </div>
+            <DashboardWrapper>
+                {children}
+            </DashboardWrapper>
         </ProtectedLayout>
     );
 }
