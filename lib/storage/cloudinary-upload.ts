@@ -1,5 +1,5 @@
-// ============================================
-// lib/storage/cloudinary-upload.ts - NEW FILE
+﻿// ============================================
+// lib/storage/cloudinary-upload.ts - VERIFIED WORKING VERSION
 // ============================================
 
 interface CloudinaryUploadResult {
@@ -22,13 +22,25 @@ export async function uploadImageToCloudinary(
     file: File,
     folder: string = 'proservice-toilet'
 ): Promise<string> {
+
+    console.log('🚀 Starting Cloudinary upload...');
+
     // 1. Validate environment variables
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+    console.log('🔍 Config check:', {
+        cloudName: cloudName ? '✅ Set' : '❌ Missing',
+        uploadPreset: uploadPreset ? '✅ Set' : '❌ Missing'
+    });
+
     if (!cloudName || !uploadPreset) {
+        const missingVars = [];
+        if (!cloudName) missingVars.push('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME');
+        if (!uploadPreset) missingVars.push('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET');
+
         throw new Error(
-            'Missing Cloudinary configuration. Please check NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in .env.local'
+            `Missing Cloudinary config: ${missingVars.join(', ')}. Please check your .env.local file.`
         );
     }
 
@@ -42,6 +54,12 @@ export async function uploadImageToCloudinary(
         throw new Error('Ukuran file maksimal 10MB');
     }
 
+    console.log('✅ File validation passed:', {
+        name: file.name,
+        type: file.type,
+        size: `${(file.size / 1024 / 1024).toFixed(2)}MB`
+    });
+
     // 3. Prepare FormData for upload
     const formData = new FormData();
     formData.append('file', file);
@@ -50,46 +68,52 @@ export async function uploadImageToCloudinary(
 
     // Add timestamp to filename for uniqueness
     const timestamp = Date.now();
-    formData.append('public_id', `toilet-${timestamp}`);
+    const randomStr = Math.random().toString(36).substring(7);
+    formData.append('public_id', `toilet-${timestamp}-${randomStr}`);
 
     // Optional: Add tags for easy management
     formData.append('tags', 'toilet-checklist,proservice');
 
-    // 4. Upload to Cloudinary (Direct from client browser!)
+    // 4. Upload to Cloudinary
     try {
-        const response = await fetch(
-            `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-            {
-                method: 'POST',
-                body: formData,
-            }
-        );
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+        console.log('📤 Uploading to:', uploadUrl);
+
+        const response = await fetch(uploadUrl, {
+            method: 'POST',
+            body: formData,
+        });
+
+        console.log('📥 Response status:', response.status);
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || 'Upload gagal');
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Cloudinary error:', errorData);
+            throw new Error(errorData.error?.message || `Upload failed with status ${response.status}`);
         }
 
         const data: CloudinaryUploadResult = await response.json();
 
+        console.log('✅ Upload successful!', {
+            url: data.secure_url,
+            format: data.format,
+            size: `${data.width}x${data.height}`,
+            bytes: `${(data.bytes / 1024).toFixed(2)}KB`
+        });
+
         // 5. Return secure HTTPS URL
         return data.secure_url;
+
     } catch (error: any) {
-        console.error('Cloudinary upload error:', error);
+        console.error('❌ Cloudinary upload error:', error);
+
+        if (error.message.includes('fetch')) {
+            throw new Error('Network error: Tidak dapat terhubung ke Cloudinary. Periksa koneksi internet Anda.');
+        }
+
         throw new Error(`Upload gagal: ${error.message}`);
     }
-}
-
-/**
- * Delete image from Cloudinary (Optional - requires backend)
- * Note: Unsigned uploads cannot be deleted from client
- * You need API Secret for this, which should be kept on server
- */
-export async function deleteImageFromCloudinary(publicId: string): Promise<void> {
-    // This requires backend API with API Secret
-    // For now, we can just keep the images in Cloudinary
-    // or implement backend deletion endpoint later
-    console.warn('Delete from Cloudinary requires backend API');
 }
 
 /**
@@ -130,4 +154,34 @@ export function getOptimizedImageUrl(
 
     // Return optimized URL
     return `${parts[0]}/upload/${transformations}/${parts[1]}`;
+}
+
+/**
+ * Verify Cloudinary configuration
+ * @returns boolean indicating if config is valid
+ */
+export function verifyCloudinaryConfig(): {
+    valid: boolean;
+    cloudName?: string;
+    uploadPreset?: string;
+    errors: string[];
+} {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+    const errors: string[] = [];
+
+    if (!cloudName) {
+        errors.push('NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set');
+    }
+
+    if (!uploadPreset) {
+        errors.push('NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET is not set');
+    }
+
+    return {
+        valid: errors.length === 0,
+        cloudName,
+        uploadPreset,
+        errors
+    };
 }

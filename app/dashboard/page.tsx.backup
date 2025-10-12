@@ -1,3 +1,6 @@
+// ============================================
+// app/dashboard/page.tsx - UPDATED WITH FILTERS
+// ============================================
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -40,6 +43,7 @@ export default function DashboardPage() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Load data on mount and when month changes
     useEffect(() => {
         loadData();
         loadUploaders();
@@ -77,18 +81,22 @@ export default function DashboardPage() {
         }
     };
 
+    // Filter data based on selected week and uploader
     const filteredData = useMemo(() => {
         let filtered = [...allChecklistData];
 
+        // Filter by week
         if (selectedWeek !== null && periods[selectedWeek]) {
             const weekDays = periods[selectedWeek].days;
             filtered = filtered.filter(item => weekDays.includes(item.day));
         }
 
+        // Filter by uploader
         if (selectedUploader !== 'all') {
             filtered = filtered.filter(item => item.uploaded_by === selectedUploader);
         }
 
+        // Convert to object format for ChecklistTable
         return filtered.reduce((acc: any, item: ChecklistItem) => {
             const key = `${item.location}-${item.month}-${item.day}`;
             acc[key] = {
@@ -136,11 +144,13 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen">
+            {/* Header with Upload Button */}
             <Header
                 averageScore={averageScore}
                 onUploadClick={() => setSidebarOpen(true)}
             />
 
+            {/* Enhanced Controls with Filters */}
             <Controls
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
@@ -153,7 +163,9 @@ export default function DashboardPage() {
                 onReset={handleResetFilters}
             />
 
+            {/* Main Checklist Table */}
             <div className="max-w-7xl mx-auto px-6 py-8">
+                {/* Filter Info */}
                 {(selectedWeek !== null || selectedUploader !== 'all') && (
                     <div className="mb-6 glass-card rounded-2xl p-4 border-l-4 border-blue-500">
                         <div className="flex items-center gap-2 text-sm">
@@ -162,8 +174,8 @@ export default function DashboardPage() {
                             </span>
                             <span className="text-slate-600">
                                 {allChecklistData.length} total records
-                                {selectedWeek !== null && ` - ${periods[selectedWeek].name}`}
-                                {selectedUploader !== 'all' && ` - ${uploaders.find(u => u.id === selectedUploader)?.name}`}
+                                {selectedWeek !== null && ` • ${periods[selectedWeek].name}`}
+                                {selectedUploader !== 'all' && ` • ${uploaders.find(u => u.id === selectedUploader)?.name}`}
                             </span>
                         </div>
                     </div>
@@ -177,6 +189,7 @@ export default function DashboardPage() {
                 />
             </div>
 
+            {/* Upload Sidebar */}
             {(profile?.role === 'cleaner' || profile?.role === 'admin') && (
                 <Sidebar
                     isOpen={sidebarOpen}
@@ -186,6 +199,7 @@ export default function DashboardPage() {
                 />
             )}
 
+            {/* Photo Modal */}
             {photoModalData && (
                 <PhotoModal
                     data={photoModalData}
