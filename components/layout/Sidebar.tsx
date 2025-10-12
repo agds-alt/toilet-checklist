@@ -69,19 +69,19 @@ export default function NavigationSidebar({ onUploadClick }: NavigationSidebarPr
 
                 // Count photos
                 const { count: photoCount } = await supabase
-                    .from('toilet_records')
+                    .from('checklist_data')
                     .select('*', { count: 'exact', head: true })
                     .not('photo_url', 'is', null);
 
                 // Count total records
                 const { count: recordCount } = await supabase
-                    .from('toilet_records')
+                    .from('checklist_data')
                     .select('*', { count: 'exact', head: true });
 
                 // Count today's records
                 const today = new Date().toISOString().split('T')[0];
                 const { count: todayCount } = await supabase
-                    .from('toilet_records')
+                    .from('checklist_data')
                     .select('*', { count: 'exact', head: true })
                     .gte('created_at', today);
 
