@@ -1,36 +1,48 @@
-﻿// ============================================
-// 3. components/auth/LoginForm.tsx - FIXED REDIRECT
+﻿// 4. app/signup/page.tsx - SIGN UP PAGE
 // ============================================
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
-import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-
-export default function LoginForm() {
-    const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+export default function SignUpPage() {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        fullName: '',
+        role: 'cleaner'
+    });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const { signIn } = useAuth();
-   
+    const { signUp } = useAuth();
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (formData.password !== formData.confirmPassword) {
+            setError('Password tidak cocok!');
+            return;
+        }
+
+        if (formData.password.length < 6) {
+            setError('Password minimal 6 karakter!');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            await signIn(email, password);
-            // SUCCESS - Redirect to dashboard
-            router.push('/');
-            router.refresh();
+            await signUp(formData.email, formData.password, formData.fullName, formData.role);
+            alert('✅ Akun berhasil dibuat! Silakan login.');
+            router.push('/login');
         } catch (err: any) {
-            setError(err.message || 'Login gagal. Periksa email dan password Anda.');
+            setError(err.message || 'Pendaftaran gagal. Coba lagi.');
         } finally {
             setLoading(false);
         }
@@ -46,15 +58,13 @@ export default function LoginForm() {
             <div className="relative w-full max-w-md">
                 <div className="text-center mb-8">
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-2xl mb-4">
-                        <span className="text-4xl">🏢</span>
+                        <UserPlus className="w-10 h-10 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Proservice Indonesia</h1>
-                    <p className="text-blue-200">Sistem Checklist Kebersihan Toilet</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">Daftar Akun Baru</h1>
+                    <p className="text-blue-200">Proservice Indonesia</p>
                 </div>
 
                 <div className="glass-card rounded-3xl p-8 shadow-2xl">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">Login</h2>
-
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
                             {error}
@@ -63,13 +73,28 @@ export default function LoginForm() {
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Nama Lengkap</label>
+                            <div className="relative">
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <input
+                                    type="text"
+                                    value={formData.fullName}
+                                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
+                                    placeholder="John Doe"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">Email</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                                 <input
                                     type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
                                     placeholder="email@example.com"
                                     required
@@ -83,8 +108,23 @@ export default function LoginForm() {
                                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                                 <input
                                     type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 mb-2">Konfirmasi Password</label>
+                            <div className="relative">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                <input
+                                    type="password"
+                                    value={formData.confirmPassword}
+                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                     className="w-full pl-12 pr-4 py-3 glass-card rounded-xl focus:ring-2 focus:ring-blue-500 font-medium"
                                     placeholder="••••••••"
                                     required
@@ -100,38 +140,23 @@ export default function LoginForm() {
                             {loading ? (
                                 <>
                                     <Loader2 className="w-5 h-5 animate-spin" />
-                                    Loading...
+                                    Mendaftar...
                                 </>
                             ) : (
                                 <>
-                                    <LogIn className="w-5 h-5" />
-                                    Login
+                                    <UserPlus className="w-5 h-5" />
+                                    Daftar
                                 </>
                             )}
                         </button>
                     </form>
 
-                    <div className="mt-6 text-center space-y-2">
-                        <Link
-                            href="/forgot-password"
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium block"
-                        >
-                            Lupa Password?
-                        </Link>
+                    <div className="mt-6 text-center">
                         <div className="text-sm text-slate-600">
-                            Belum punya akun?{' '}
-                            <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-bold">
-                                Daftar
+                            Sudah punya akun?{' '}
+                            <Link href="/login" className="text-blue-600 hover:text-blue-700 font-bold">
+                                Login
                             </Link>
-                        </div>
-                    </div>
-
-                    <div className="mt-6 pt-6 border-t text-center text-sm text-slate-600">
-                        <p className="font-semibold mb-2">Demo Accounts:</p>
-                        <div className="space-y-1 text-xs font-mono bg-slate-50 p-3 rounded-xl">
-                            <p>Admin: admin@proservice.com / admin123</p>
-                            <p>Supervisor: supervisor@proservice.com / super123</p>
-                            <p>Cleaner: cleaner@proservice.com / clean123</p>
                         </div>
                     </div>
                 </div>

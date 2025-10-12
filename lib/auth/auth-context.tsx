@@ -1,12 +1,18 @@
-// ============================================
-// lib/auth/auth-context.tsx - AUTH CONTEXT
-// ============================================
+﻿// lib/auth/auth-context.tsx
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import { Profile } from '@/types';
+
+export interface Profile {
+    id: string;
+    email: string;
+    full_name: string | null;
+    role: 'admin' | 'supervisor' | 'cleaner';
+    created_at: string;
+    updated_at: string;
+}
 
 interface AuthContextType {
     user: User | null;
@@ -27,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         // Get initial session
         supabase.auth.getSession().then(({ data: { session } }) => {
+            console.log('🔐 Session check:', session ? 'Logged in' : 'Not logged in');
             setUser(session?.user ?? null);
             if (session?.user) {
                 fetchProfile(session.user.id);
@@ -37,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            console.log('🔐 Auth state changed:', _event);
             setUser(session?.user ?? null);
             if (session?.user) {
                 fetchProfile(session.user.id);
@@ -51,16 +59,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const fetchProfile = async (userId: string) => {
         try {
+            console.log('👤 Fetching profile for:', userId);
+
             const { data, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error('❌ Profile fetch error:', error);
+                // If profile doesn't exist, try to create it
+                if (error.code === 'PGRST116') {
+                    console.log('⚠️ Profile not found, may need to be created by trigger');
+                }
+                throw error;
+            }
+
+            console.log('✅ Profile loaded:', data);
             setProfile(data);
         } catch (error) {
-            console.error('Error fetching profile:', error);
+            console.error('❌ Error fetching profile:', error);
         } finally {
             setLoading(false);
         }
