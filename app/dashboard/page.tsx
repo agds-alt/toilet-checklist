@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
@@ -6,7 +6,7 @@ import Controls from '@/components/Controls';
 import ChecklistTable from '@/components/ChecklistTable';
 import PhotoModal from '@/components/PhotoModal';
 import Sidebar from '@/components/Sidebar';
-import { getChecklistData } from '@/lib/database/checklist';
+import { getChecklistData, ChecklistData } from '@/lib/database/checklist'; // ← UPDATE: Import ChecklistData type
 import { getAverageScore, periods } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/auth-context';
 import { supabase } from '@/lib/supabase/client';
@@ -141,6 +141,7 @@ export default function DashboardPage() {
                 onUploadClick={() => setSidebarOpen(true)}
             />
 
+            {/* ← UPDATE: Pass rawData to Controls for export */}
             <Controls
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
@@ -151,6 +152,7 @@ export default function DashboardPage() {
                 onWeekChange={setSelectedWeek}
                 onUploaderChange={setSelectedUploader}
                 onReset={handleResetFilters}
+                rawData={allChecklistData} // ← ADD: Pass raw data for export
             />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
