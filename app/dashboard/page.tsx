@@ -1,10 +1,6 @@
-// ============================================
-// app/page.tsx - UPDATE MAIN PAGE WITH PROTECTED LAYOUT
-// ============================================
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProtectedLayout from '@/components/layout/ProtectedLayout';
 import Header from '@/components/Header';
 import Controls from '@/components/Controls';
 import ChecklistTable from '@/components/ChecklistTable';
@@ -13,12 +9,8 @@ import Sidebar from '@/components/Sidebar';
 import { getChecklistData } from '@/lib/database/checklist';
 import { getAverageScore } from '@/lib/utils';
 import { useAuth } from '@/lib/auth/auth-context';
-import { CldImage } from 'next-cloudinary';
 
-// By default, the CldImage component applies auto-format and auto-quality to all delivery URLs for optimized delivery.
-
-
-export default function Home() {
+export default function DashboardPage() {
     const { profile } = useAuth();
     const [checklistData, setChecklistData] = useState<any>({});
     const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -68,47 +60,58 @@ export default function Home() {
 
     const averageScore = getAverageScore(checklistData);
 
-    return (
-        <ProtectedLayout>
-            <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
-                <Header averageScore={averageScore} onUploadClick={() => setSidebarOpen(true)} />
-                <Controls
-                    selectedMonth={selectedMonth}
-                    selectedYear={selectedYear}
-                    onMonthChange={setSelectedMonth}
-                />
-
-                <div className="max-w-7xl mx-auto px-6 py-8">
-                    {loading ? (
-                        <div className="text-center py-20">
-                            <div className="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="mt-4 text-slate-600">Loading data...</p>
-                        </div>
-                    ) : (
-                        <ChecklistTable
-                            data={checklistData}
-                            selectedMonth={selectedMonth}
-                            onCellClick={handleCellClick}
-                        />
-                    )}
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-600">Loading checklist...</p>
                 </div>
+            </div>
+        );
+    }
 
-                {(profile?.role === 'cleaner' || profile?.role === 'admin') && (
-                    <Sidebar
-                        isOpen={sidebarOpen}
-                        onClose={() => setSidebarOpen(false)}
-                        onUpload={handleUpload}
-                        selectedMonth={selectedMonth}
-                    />
-                )}
+    return (
+        <div className="min-h-screen">
+            {/* Header with Upload Button */}
+            <Header
+                averageScore={averageScore}
+                onUploadClick={() => setSidebarOpen(true)}
+            />
 
-                {photoModalData && (
-                    <PhotoModal
-                        data={photoModalData}
-                        onClose={() => setPhotoModalData(null)}
-                    />
-                )}
-            </main>
-        </ProtectedLayout>
+            {/* Month Filter */}
+            <Controls
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onMonthChange={setSelectedMonth}
+            />
+
+            {/* Main Checklist Table */}
+            <div className="max-w-7xl mx-auto px-6 py-8">
+                <ChecklistTable
+                    data={checklistData}
+                    selectedMonth={selectedMonth}
+                    onCellClick={handleCellClick}
+                />
+            </div>
+
+            {/* Upload Sidebar */}
+            {(profile?.role === 'cleaner' || profile?.role === 'admin') && (
+                <Sidebar
+                    isOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    onUpload={handleUpload}
+                    selectedMonth={selectedMonth}
+                />
+            )}
+
+            {/* Photo Modal */}
+            {photoModalData && (
+                <PhotoModal
+                    data={photoModalData}
+                    onClose={() => setPhotoModalData(null)}
+                />
+            )}
+        </div>
     );
 }

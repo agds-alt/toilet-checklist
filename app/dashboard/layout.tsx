@@ -1,6 +1,3 @@
-// ============================================
-// 1. app/(dashboard)/layout.tsx - DASHBOARD LAYOUT WITH SIDEBAR
-// ============================================
 import NavigationSidebar from '@/components/layout/Sidebar';
 import ProtectedLayout from '@/components/layout/ProtectedLayout';
 

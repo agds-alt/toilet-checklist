@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { TrendingUp, Users, Image as ImageIcon, CheckCircle, Calendar } from 'lucide-react';
+import { TrendingUp, Image as ImageIcon, CheckCircle, Calendar } from 'lucide-react';
 
-export default function AnalyticsDashboard() {
+export default function AnalyticsPage() {
     const [stats, setStats] = useState({
         totalRecords: 0,
         averageScore: 0,
@@ -15,66 +15,43 @@ export default function AnalyticsDashboard() {
         poorCount: 0
     });
     const [loading, setLoading] = useState(true);
-    const [selectedMonth] = useState(new Date().getMonth());
-    const [selectedYear] = useState(new Date().getFullYear());
 
     useEffect(() => {
         loadStats();
-    }, [selectedMonth, selectedYear]);
+    }, []);
 
     const loadStats = async () => {
         try {
+            // Get current month stats
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+
             const { data, error } = await supabase
-                .rpc('get_monthly_stats', {
-                    p_month: selectedMonth,
-                    p_year: selectedYear
-                });
+                .from('checklist_data')
+                .select('score, approved_by')
+                .eq('month', currentMonth)
+                .eq('year', currentYear);
 
             if (error) throw error;
-            if (data && data.length > 0) {
-                setStats(data[0]);
-            }
+
+            const records = data || [];
+            const scores = records.map(r => r.score);
+
+            setStats({
+                totalRecords: records.length,
+                averageScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+                approvedCount: records.filter(r => r.approved_by).length,
+                excellentCount: scores.filter(s => s >= 95).length,
+                goodCount: scores.filter(s => s >= 85 && s < 95).length,
+                fairCount: scores.filter(s => s >= 75 && s < 85).length,
+                poorCount: scores.filter(s => s < 75).length
+            });
         } catch (error) {
             console.error('Error loading stats:', error);
         } finally {
             setLoading(false);
         }
     };
-
-    const statCards = [
-        {
-            title: 'Total Records',
-            value: stats.totalRecords,
-            icon: ImageIcon,
-            color: 'from-blue-500 to-blue-600',
-            bgColor: 'bg-blue-50',
-            textColor: 'text-blue-600'
-        },
-        {
-            title: 'Average Score',
-            value: stats.averageScore,
-            icon: TrendingUp,
-            color: 'from-green-500 to-green-600',
-            bgColor: 'bg-green-50',
-            textColor: 'text-green-600'
-        },
-        {
-            title: 'Approved',
-            value: stats.approvedCount,
-            icon: CheckCircle,
-            color: 'from-purple-500 to-purple-600',
-            bgColor: 'bg-purple-50',
-            textColor: 'text-purple-600'
-        },
-        {
-            title: 'Excellent (95+)',
-            value: stats.excellentCount,
-            icon: TrendingUp,
-            color: 'from-yellow-500 to-yellow-600',
-            bgColor: 'bg-yellow-50',
-            textColor: 'text-yellow-600'
-        }
-    ];
 
     if (loading) {
         return (
@@ -94,28 +71,59 @@ export default function AnalyticsDashboard() {
                 <h1 className="text-4xl font-bold text-slate-800 mb-2">Analytics Dashboard</h1>
                 <p className="text-slate-600 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    {new Date(selectedYear, selectedMonth).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                    {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                 </p>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {statCards.map((stat, idx) => {
-                    const Icon = stat.icon;
-                    return (
-                        <div key={idx} className="glass-card rounded-2xl p-6 hover:shadow-xl transition-shadow">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className={`p-3 ${stat.bgColor} rounded-xl`}>
-                                    <Icon className={`w-6 h-6 ${stat.textColor}`} />
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-sm font-medium text-slate-600">{stat.title}</p>
-                                <p className="text-3xl font-bold text-slate-800">{stat.value}</p>
-                            </div>
+                <div className="glass-card rounded-2xl p-6 hover:shadow-xl transition-shadow">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-blue-50 rounded-xl">
+                            <ImageIcon className="w-6 h-6 text-blue-600" />
                         </div>
-                    );
-                })}
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-600">Total Records</p>
+                        <p className="text-3xl font-bold text-slate-800">{stats.totalRecords}</p>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-2xl p-6 hover:shadow-xl transition-shadow">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-green-50 rounded-xl">
+                            <TrendingUp className="w-6 h-6 text-green-600" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-600">Average Score</p>
+                        <p className="text-3xl font-bold text-slate-800">{stats.averageScore}</p>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-2xl p-6 hover:shadow-xl transition-shadow">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-purple-50 rounded-xl">
+                            <CheckCircle className="w-6 h-6 text-purple-600" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-600">Approved</p>
+                        <p className="text-3xl font-bold text-slate-800">{stats.approvedCount}</p>
+                    </div>
+                </div>
+
+                <div className="glass-card rounded-2xl p-6 hover:shadow-xl transition-shadow">
+                    <div className="flex items-start justify-between mb-4">
+                        <div className="p-3 bg-yellow-50 rounded-xl">
+                            <TrendingUp className="w-6 h-6 text-yellow-600" />
+                        </div>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-slate-600">Excellent (95+)</p>
+                        <p className="text-3xl font-bold text-slate-800">{stats.excellentCount}</p>
+                    </div>
+                </div>
             </div>
 
             {/* Score Distribution */}
@@ -130,7 +138,7 @@ export default function AnalyticsDashboard() {
                         <div className="w-full bg-blue-200 rounded-full h-2">
                             <div
                                 className="bg-blue-600 h-2 rounded-full transition-all"
-                                style={{ width: `${(stats.excellentCount / stats.totalRecords * 100) || 0}%` }}
+                                style={{ width: `${stats.totalRecords ? (stats.excellentCount / stats.totalRecords * 100) : 0}%` }}
                             ></div>
                         </div>
                     </div>
@@ -143,7 +151,7 @@ export default function AnalyticsDashboard() {
                         <div className="w-full bg-green-200 rounded-full h-2">
                             <div
                                 className="bg-green-600 h-2 rounded-full transition-all"
-                                style={{ width: `${(stats.goodCount / stats.totalRecords * 100) || 0}%` }}
+                                style={{ width: `${stats.totalRecords ? (stats.goodCount / stats.totalRecords * 100) : 0}%` }}
                             ></div>
                         </div>
                     </div>
@@ -156,7 +164,7 @@ export default function AnalyticsDashboard() {
                         <div className="w-full bg-yellow-200 rounded-full h-2">
                             <div
                                 className="bg-yellow-600 h-2 rounded-full transition-all"
-                                style={{ width: `${(stats.fairCount / stats.totalRecords * 100) || 0}%` }}
+                                style={{ width: `${stats.totalRecords ? (stats.fairCount / stats.totalRecords * 100) : 0}%` }}
                             ></div>
                         </div>
                     </div>
@@ -169,7 +177,7 @@ export default function AnalyticsDashboard() {
                         <div className="w-full bg-red-200 rounded-full h-2">
                             <div
                                 className="bg-red-600 h-2 rounded-full transition-all"
-                                style={{ width: `${(stats.poorCount / stats.totalRecords * 100) || 0}%` }}
+                                style={{ width: `${stats.totalRecords ? (stats.poorCount / stats.totalRecords * 100) : 0}%` }}
                             ></div>
                         </div>
                     </div>

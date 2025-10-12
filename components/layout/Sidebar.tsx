@@ -1,5 +1,5 @@
 ﻿// ============================================
-// 2. components/layout/Sidebar.tsx - NAVIGATION
+// 4. components/layout/Sidebar.tsx - FIXED NAVIGATION
 // ============================================
 'use client';
 
@@ -11,7 +11,6 @@ import {
     Users,
     LogOut,
     Settings,
-    FileText,
     TrendingUp
 } from 'lucide-react';
 
@@ -29,44 +28,37 @@ export default function NavigationSidebar() {
         {
             title: 'Dashboard',
             icon: LayoutDashboard,
-            href: '/',
+            href: '/dashboard',  // ← Main checklist
             roles: ['admin', 'supervisor', 'cleaner']
         },
         {
             title: 'Analytics',
             icon: TrendingUp,
-            href: '/dashboard',
+            href: '/dashboard/analytics',  // ← Analytics page
             roles: ['admin', 'supervisor']
         },
         {
             title: 'Manage Photos',
             icon: Image,
-            href: '/photos',
+            href: '/dashboard/photos',  // ← Photos
             roles: ['admin', 'supervisor', 'cleaner']
         },
         {
             title: 'Manage Users',
             icon: Users,
-            href: '/users',
+            href: '/dashboard/users',  // ← Users
             roles: ['admin']
-        },
-        {
-            title: 'Reports',
-            icon: FileText,
-            href: '/reports',
-            roles: ['admin', 'supervisor']
-        },
-        {
-            title: 'Settings',
-            icon: Settings,
-            href: '/settings',
-            roles: ['admin', 'supervisor', 'cleaner']
         }
     ];
 
     const filteredMenu = menuItems.filter(item =>
         item.roles.includes(profile?.role || 'cleaner')
     );
+
+    const handleNavigation = (href: string) => {
+        console.log('Navigating to:', href);
+        router.push(href);
+    };
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 glass-card border-r shadow-xl z-30">
@@ -112,7 +104,7 @@ export default function NavigationSidebar() {
                             return (
                                 <li key={item.href}>
                                     <button
-                                        onClick={() => router.push(item.href)}
+                                        onClick={() => handleNavigation(item.href)}
                                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
                                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
                                                 : 'hover:bg-slate-100 text-slate-700'
