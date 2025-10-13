@@ -1,5 +1,5 @@
 ﻿// ============================================
-// lib/auth/auth-context.tsx - FIXED STRUCTURE
+// lib/auth/auth-context.tsx - WITH 7 DAY SESSION
 // ============================================
 'use client';
 
@@ -72,9 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (error) {
                 console.error('❌ Profile fetch error:', error);
-                if (error.code === 'PGRST116') {
-                    console.log('⚠️ Profile not found');
-                }
                 throw error;
             }
 
@@ -88,7 +85,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const signIn = async (email: string, password: string) => {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        // Sign in with persistent session (7 days by default from Supabase settings)
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
         if (error) throw error;
     };
 
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
             console.log('🔐 Starting signup process...');
 
-            // Step 1: Sign up the user
+            // Step 1: Create auth user
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -104,64 +106,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                     data: {
                         full_name: fullName,
                         role: role
-                    },
-                    emailRedirectTo: `${window.location.origin}/dashboard`
+                    }
                 }
             });
 
-            if (authError) {
-                console.error('❌ Auth signup error:', authError);
-                throw authError;
-            }
+            if (authError) throw authError;
 
             if (!authData.user) {
-                throw new Error('Signup failed - no user returned');
+                throw new Error('User creation failed');
             }
 
-            console.log('✅ Auth user created:', authData.user.id);
-
-            // Step 2: Wait a bit for the trigger to execute
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Step 3: Check if profile was created by trigger
-            const { data: existingProfile, error: checkError } = await supabase
+            // Step 2: Create profile
+            const { error: profileError } = await supabase
                 .from('profiles')
-                .select('id')
-                .eq('id', authData.user.id)
-                .single();
+                .insert({
+                    id: authData.user.id,
+                    email: email,
+                    full_name: fullName,
+                    role: role as 'admin' | 'supervisor' | 'cleaner',
+                    is_active: true
+                });
 
-            if (checkError && checkError.code !== 'PGRST116') {
-                console.error('❌ Error checking profile:', checkError);
+            if (profileError) {
+                console.error('Profile creation error:', profileError);
+                throw profileError;
             }
 
-            // Step 4: If profile doesn't exist, create it manually
-            if (!existingProfile) {
-                console.log('⚠️ Profile not created by trigger, creating manually...');
-
-                const { error: profileError } = await supabase
-                    .from('profiles')
-                    .insert({
-                        id: authData.user.id,
-                        email: email,
-                        full_name: fullName,
-                        role: role,
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    });
-
-                if (profileError && profileError.code !== '23505') {
-                    console.error('❌ Profile creation error:', profileError);
-                    throw new Error(`Failed to create profile: ${profileError.message}`);
-                }
-
-                console.log('✅ Profile created manually');
-            } else {
-                console.log('✅ Profile already exists from trigger');
-            }
-
+            console.log('✅ Signup successful!');
         } catch (error: any) {
-            console.error('❌ Signup process error:', error);
+            console.error('❌ Signup error:', error);
             throw error;
         }
     };
@@ -169,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
+        setProfile(null);
     };
 
     return (

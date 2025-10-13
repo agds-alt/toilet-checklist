@@ -85,8 +85,8 @@ export default function Header({ selectedMonth, selectedYear, data }: HeaderProp
                 {/* Stats Bar */}
                 <div className="grid grid-cols-3 gap-3 md:gap-4">
                     <div className="glass-card rounded-xl px-4 py-3 text-center hover:scale-105 transition-transform">
-                        <div className="text-2xl md:text-3xl font-bold text-slate-800">28</div>
-                        <div className="text-xs text-slate-600 font-medium">Total Lokasi</div>
+                        <div className="text-2xl md:text-3xl font-bold text-slate-800">8</div>
+                        <div className="text-xs text-slate-600 font-medium">Titik Lokasi Toilet</div>
                     </div>
                     <div className="glass-card rounded-xl px-4 py-3 text-center hover:scale-105 transition-transform">
                         <div className="text-2xl md:text-3xl font-bold text-green-600">

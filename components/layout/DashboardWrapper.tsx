@@ -1,11 +1,14 @@
 // ============================================
-// components/layout/DashboardWrapper.tsx - FIXED (NO GAP)
+// components/layout/DashboardWrapper.tsx - WITH FOOTER & EXTRAS
 // ============================================
 'use client';
 
 import { useState, useEffect } from 'react';
 import NavigationSidebar from '@/components/layout/Sidebar';
 import Sidebar from '@/components/Sidebar';
+import ScoreLegendSidebar from '@/components/ScoreLegendSidebar';
+import Footer from '@/components/layout/Footer';
+import WhatsAppButton from '@/components/WhatsAppButton';
 import { useAuth } from '@/lib/auth/auth-context';
 
 export default function DashboardWrapper({
@@ -55,17 +58,27 @@ export default function DashboardWrapper({
 
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+            {/* Left Navigation Sidebar */}
             <NavigationSidebar
                 onUploadClick={canUpload ? () => setUploadSidebarOpen(true) : undefined}
             />
 
             {/* Main content with dynamic margin and smooth transition */}
             <main
-                className={`flex-1 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'
+                className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'ml-20' : 'ml-64'
                     }`}
             >
-                {children}
+                {/* Page Content */}
+                <div className="flex-1">
+                    {children}
+                </div>
+
+                {/* Footer */}
+                <Footer />
             </main>
+
+            {/* Right Score Legend Sidebar */}
+            <ScoreLegendSidebar />
 
             {/* Upload Sidebar - Global untuk semua pages */}
             {canUpload && (
@@ -80,6 +93,9 @@ export default function DashboardWrapper({
                     selectedMonth={new Date().getMonth()}
                 />
             )}
+
+            {/* WhatsApp Floating Button */}
+            <WhatsAppButton />
         </div>
     );
 }
