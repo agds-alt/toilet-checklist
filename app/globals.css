@@ -321,3 +321,254 @@ button {
 html {
     scroll-behavior: smooth;
 }
+
+/* Custom Sonner Toast Styles */
+[data-sonner-toast] {
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+    [data-sonner-toast][data-type="success"] {
+        background: #10b981 !important;
+        border-color: #059669 !important;
+    }
+
+    [data-sonner-toast][data-type="error"] {
+        background: #ef4444 !important;
+        border-color: #dc2626 !important;
+    }
+/* Prevent auto-zoom on input focus (iOS) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+    font-size: 16px !important;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Better touch targets */
+button, a, input, select {
+    touch-action: manipulation;
+}
+
+    /* ===== MOBILE RESPONSIVE FIX ===== */
+
+    /* Prevent auto-zoom on input focus (iOS Safari) */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    input[type="tel"],
+    select,
+    textarea {
+        font-size: 16px !important; /* Must be 16px minimum */
+    }
+
+/* Better text rendering */
+html {
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better touch targets */
+button,
+a,
+input,
+select,
+label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+/* Disable pull-to-refresh on mobile */
+body {
+    overscroll-behavior-y: contain;
+}
+
+/* Fix iOS input shadow */
+input,
+select,
+textarea {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    border-radius: 0.5rem;
+}
+
+/* Better select dropdown on mobile */
+select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+}
+
+/* Prevent zoom on landscape orientation */
+@media screen and (orientation: landscape) {
+    html {
+        -webkit-text-size-adjust: 100%;
+    }
+}
+
+/* Accordion Animation - Add to globals.css */
+@keyframes accordion-down {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+
+    to {
+        height: var(--radix-accordion-content-height);
+        opacity: 1;
+    }
+}
+
+@keyframes accordion-up {
+    from {
+        height: var(--radix-accordion-content-height);
+        opacity: 1;
+    }
+
+    to {
+        height: 0;
+        opacity: 0;
+    }
+}
+
+.animate-accordion-down {
+    animation: accordion-down 0.3s ease-out;
+}
+
+.animate-accordion-up {
+    animation: accordion-up 0.3s ease-out;
+}
+
+/* ===== BOTTOM NAVIGATION STYLES ===== */
+/* Add these to your app/globals.css */
+
+/* Safe area for notch devices (iPhone X+, etc) */
+.safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth slide up animation for bottom nav */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Apply to bottom nav */
+nav[class*="bottom-0"] {
+    animation: slideUp 0.3s ease-out;
+}
+
+/* Prevent content from going under bottom nav */
+body {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth icon transitions */
+@keyframes bounce-subtle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+}
+
+.animate-bounce-subtle {
+    animation: bounce-subtle 0.6s ease-in-out;
+}
+
+/* Ripple effect on tap (mobile) */
+@keyframes ripple {
+    0% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Active indicator pulse */
+@keyframes pulse-dot {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.8;
+    }
+}
+
+/* Floating effect for upload button */
+@keyframes float-subtle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-4px);
+    }
+}
+
+/* Backdrop blur support */
+@supports (backdrop-filter: blur(20px)) {
+    nav[class*="backdrop-blur"] {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+}
+
+/* Prevent text selection on nav items */
+nav button {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+    /* Better touch feedback */
+    nav button:active {
+        transform: scale(0.95);
+    }
+
+/* Fix for iOS Safari bottom bar */
+@supports (-webkit-touch-callout: none) {
+    nav[class*="bottom-0"] {
+        padding-bottom: max(env(safe-area-inset-bottom), 8px);
+    }
+}

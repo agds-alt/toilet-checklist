@@ -1,5 +1,5 @@
 ﻿// ============================================
-// lib/storage/cloudinary-upload.ts - VERIFIED WORKING VERSION
+// lib/storage/cloudinary-upload.ts - FIXED VERSION
 // ============================================
 
 interface CloudinaryUploadResult {

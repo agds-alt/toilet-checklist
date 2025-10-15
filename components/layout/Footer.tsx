@@ -27,19 +27,13 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    <div className="text-center">
-                        <p className="text-sm text-slate-600 font-medium">
-                            Developed with <span className="text-red-500">❤️</span> by <span className="font-bold text-blue-600">AGDS Corporation</span>
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                   <div className="text-center">
+                                          <p className="text-xs text-slate-500 mt-0.5">
                             Founded & Managed by <span className="font-semibold text-slate-700">Abdul Gofur</span>
                         </p>
                     </div>
 
-                    <div className="text-center md:text-right">
-                        <p className="text-xs text-slate-500">© {currentYear} AGDS Corp. All rights reserved.</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">Version 1.0.0</p>
-                    </div>
+                    
                 </div>
             </div>
         </footer>

@@ -33,7 +33,10 @@ export function formatDataForExport(
         photo_url: item.photo_url || 'No Photo',
         uploaded_by: item.uploaded_by || '-',
         approved_by: item.approved_by || 'Pending',
-        created_at: new Date(item.created_at).toLocaleString('id-ID')
+        created_at: item.created_at
+            ? new Date(item.created_at).toLocaleString('id-ID')
+            : '-'
+
     }));
 }
 

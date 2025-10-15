@@ -13,6 +13,7 @@ export default function DashboardLayout({
         <ProtectedLayout>
             <DashboardWrapper>
                 {children}
+
             </DashboardWrapper>
         </ProtectedLayout>
     );

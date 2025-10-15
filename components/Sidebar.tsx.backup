@@ -1,0 +1,147 @@
+﻿'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Upload, BarChart3, Calendar, Settings, LogOut, Home } from 'lucide-react';
+import { useAuth } from '@/lib/auth/auth-context';
+
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+    const { profile, signOut } = useAuth();
+    const pathname = usePathname();
+
+    const menuItems = [
+        {
+            href: '/dashboard',
+            icon: Home,
+            label: 'Dashboard',
+            roles: ['admin', 'cleaner', 'viewer', 'supervisor']
+        },
+        {
+            href: '/upload',
+            icon: Upload,
+            label: 'Upload Data',
+            roles: ['admin', 'cleaner']
+        },
+        {
+            href: '/analytics',
+            icon: BarChart3,
+            label: 'Statistik',
+            roles: ['admin', 'viewer', 'supervisor']
+        },
+        {
+            href: '/schedule',
+            icon: Calendar,
+            label: 'Jadwal',
+            roles: ['admin', 'cleaner', 'supervisor']
+        },
+        {
+            href: '/settings',
+            icon: Settings,
+            label: 'Pengaturan',
+            roles: ['admin']
+        },
+    ];
+
+    // Filter menu berdasarkan role
+    const filteredMenuItems = menuItems.filter(item =>
+        item.roles.includes(profile?.role || 'viewer')
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <>
+            {/* Backdrop - Mobile only */}
+            <div
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+                onClick={onClose}
+            />
+
+            {/* Sidebar */}
+            <aside className="fixed left-0 top-0 h-full w-64 bg-white shadow-2xl z-50 overflow-y-auto border-r border-gray-200">
+                <div className="p-6">
+                    {/* Logo / Brand */}
+                    <div className="mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
+                                <BarChart3 className="text-white" size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                                    Toilet Checklist
+                                </h2>
+                                <p className="text-xs text-gray-500">Proservice Indonesia</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* User Info */}
+                    {profile && (
+                        <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                    {profile.full_name?.charAt(0) || 'U'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-gray-900 truncate">
+                                        {profile.full_name || 'User'}
+                                    </p>
+                                    <p className="text-xs text-gray-500 capitalize">
+                                        {profile.role || 'viewer'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Navigation Menu */}
+                    <nav className="space-y-2">
+                        {filteredMenuItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href;
+
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={onClose}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
+                                            ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg'
+                                            : 'text-gray-700 hover:bg-gray-100'
+                                        }`}
+                                >
+                                    <Icon size={20} />
+                                    <span className="font-medium">{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Logout Button */}
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                        <button
+                            onClick={() => {
+                                signOut();
+                                onClose();
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                            <LogOut size={20} />
+                            <span className="font-medium">Logout</span>
+                        </button>
+                    </div>
+
+                    {/* App Version */}
+                    <div className="mt-6 text-center text-xs text-gray-400">
+                        Version 1.0.0
+                    </div>
+                </div>
+            </aside>
+        </>
+    );
+}

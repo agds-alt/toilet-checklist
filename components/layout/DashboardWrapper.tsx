@@ -1,27 +1,20 @@
 // ============================================
-// components/layout/DashboardWrapper.tsx - WITH FOOTER & EXTRAS
+// components/layout/DashboardWrapper.tsx - CLEANED
 // ============================================
 'use client';
 
 import { useState, useEffect } from 'react';
 import NavigationSidebar from '@/components/layout/Sidebar';
-import Sidebar from '@/components/Sidebar';
-import ScoreLegendSidebar from '@/components/ScoreLegendSidebar';
+
 import Footer from '@/components/layout/Footer';
 import WhatsAppButton from '@/components/WhatsAppButton';
-import { useAuth } from '@/lib/auth/auth-context';
 
 export default function DashboardWrapper({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const { profile } = useAuth();
-    const [uploadSidebarOpen, setUploadSidebarOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-    // Only show upload sidebar for admin and cleaner
-    const canUpload = profile?.role === 'admin' || profile?.role === 'cleaner';
 
     // Listen to sidebar collapse state from localStorage
     useEffect(() => {
@@ -59,9 +52,7 @@ export default function DashboardWrapper({
     return (
         <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
             {/* Left Navigation Sidebar */}
-            <NavigationSidebar
-                onUploadClick={canUpload ? () => setUploadSidebarOpen(true) : undefined}
-            />
+            <NavigationSidebar />
 
             {/* Main content with dynamic margin and smooth transition */}
             <main
@@ -77,22 +68,7 @@ export default function DashboardWrapper({
                 <Footer />
             </main>
 
-            {/* Right Score Legend Sidebar */}
-            <ScoreLegendSidebar />
-
-            {/* Upload Sidebar - Global untuk semua pages */}
-            {canUpload && (
-                <Sidebar
-                    isOpen={uploadSidebarOpen}
-                    onClose={() => setUploadSidebarOpen(false)}
-                    onUpload={async () => {
-                        setUploadSidebarOpen(false);
-                        // Refresh page to show new data
-                        window.location.reload();
-                    }}
-                    selectedMonth={new Date().getMonth()}
-                />
-            )}
+       
 
             {/* WhatsApp Floating Button */}
             <WhatsAppButton />
